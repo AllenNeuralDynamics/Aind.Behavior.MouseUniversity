@@ -1,8 +1,18 @@
 from typing import Any, Callable
-from pydantic import Field, GetJsonSchemaHandler
+
+from aind_data_schema.base import AindCoreModel, AindModel
+from pydantic import GetJsonSchemaHandler
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import core_schema
 from semver import Version
+
+
+class AindBehaviorCoreModel(AindCoreModel, extra="ignore"):
+    pass
+
+
+class AindBehaviorModel(AindModel, extra="ignore"):
+    pass
 
 
 class SemVerAnnotation:
