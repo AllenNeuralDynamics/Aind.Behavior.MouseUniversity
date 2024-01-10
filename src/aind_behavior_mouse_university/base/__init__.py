@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from importlib import import_module
+
 from typing import Any, Callable, Generic, List, Literal, TypeVar
 
 from aind_data_schema.base import AindCoreModel, AindModel
@@ -57,26 +59,34 @@ class Task(AindBehaviorCoreModel):
 
     name: str
     description: str
-    describedBy = "tbd_link.url"
+    describedBy: Literal["tbd_link.url"] = "tbd_link.url"
     schema_version: Literal["0.1.0"] = "0.1.0"
 
 
 TTask = TypeVar("TTask", bound=Task)
 
 
+class Metrics(AindBehaviorCoreModel, Generic[TTask]):
+    """Base class used to define the metrics model for a specific tasks in the mouse university."""
+
+    name: str
+    description: str
+    describedBy: Literal["tbd_link.url"] = "tbd_link.url"
+    schema_version: Literal["0.1.0"] = "0.1.0"
+    metrics: Any = Field(None, description="Metrics that the task contains.")
+
+
 class TransitionRule(AindBehaviorModel):
     """Base class used to define the transition rule logic of a mouse university task."""
 
     name: str = Field(..., description="Name of the transition rule.")
-    file: str = Field("todo", description="File that contains the transition rule.")
-    url: str = Field("todo", description="URL to the file that contains the transition rule.")
-    version: str = Field("todo", description="Version of the transition rule.")
+    callable: Rule = Field(..., description="Callable or reference to a callable that defines the transition rule.")
 
 
 class StageTransition(AindBehaviorModel):
     """Base class used to define the stage transition logic of a mouse university task."""
 
-    target_state: Stage = Field(..., description="Target stage of the transition.")
+    target_stage: Stage = Field(..., description="Target stage of the transition.")
     transition_rule: TransitionRule = Field(..., description="Transition rule that defines the transition.")
     description: str = Field("", description="Optional description of the stage transition.")
 
@@ -112,16 +122,64 @@ class Curriculum(AindBehaviorCoreModel):
 
     name: str
     description: str
-    describedBy = "tbd_link.url"
+    describedBy: Literal["tbd_link.url"] = "tbd_link.url"
     schema_version: Literal["0.1.0"] = "0.1.0"
     stages: list[Stage] = Field(..., description="Stages that the curriculum contains.")
 
 
-class Metrics(AindBehaviorCoreModel, Generic[TTask]):
-    """Base class used to define the metrics model for a specific tasks in the mouse university."""
+class Rule:
+    # todo considering using Callable[[Metrics], Stage] and validating here?
 
-    name: str
-    description: str
-    describedBy = "tbd_link.url"
-    schema_version: Literal["0.1.0"] = "0.1.0"
-    metrics: Any = Field(None, description="Metrics that the task contains.")
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls,
+        _source_type: Any,
+        _handler: Callable[[Any], core_schema.CoreSchema],
+    ) -> core_schema.CoreSchema:
+        def validate_from_str(value: str) -> Callable:
+            return cls._deserialize_callable(value)
+
+        from_str_schema = core_schema.chain_schema(
+            [
+                core_schema.str_schema(),
+                core_schema.no_info_plain_validator_function(validate_from_str),
+            ]
+        )
+
+        return core_schema.json_or_python_schema(
+            json_schema=from_str_schema,
+            python_schema=core_schema.union_schema(
+                [
+                    core_schema.is_instance_schema(Callable),
+                    from_str_schema,
+                ]
+            ),
+            serialization=core_schema.plain_serializer_function_ser_schema(function=cls._serialize_callable),
+        )
+
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls, _core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        return handler(core_schema.str_schema())
+
+    @staticmethod
+    def _deserialize_callable(value: str | Callable) -> Callable:
+        if callable(value):
+            return value
+        else:
+            split = value.rsplit(".", 1)
+            if len(split) == 0:
+                raise ValueError("Invalid rule value while attempting to deserialize callable. Got {value}, expected string in the format 'module.function'}")
+            elif len(split) == 1:
+                return globals()[split]
+            else:
+                module = import_module(split[0])
+                return getattr(module, split[1])
+
+    @staticmethod
+    def _serialize_callable(value: str | Callable) -> Callable:
+        if isinstance(value, str):
+            value = Rule._deserialize_callable(value)
+        return value.__module__ + "." + value.__name__
+
