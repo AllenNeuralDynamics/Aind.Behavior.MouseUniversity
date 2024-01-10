@@ -79,15 +79,20 @@ class TransitionRule(AindBehaviorModel):
     description: str = Field("", description="Optional description of the transition rule.")
 
     @field_serializer("target_stage")
-    def task_as_reference(self, target_stage: Stage, _info):
-        return target_stage.name
+    def stage_as_reference(self, target_stage: Stage, _info):
+        StageABC.model_validate_json(target_stage.model_dump_json())
+
+
+class StageABC(AindBehaviorCoreModel):
+    """Base class used to define the stage logic of a mouse university task."""
+
+    name: str = Field(..., description="Name of the stage.")
+    description: str = Field("", description="Description of the stage.")
 
 
 class Stage(AindBehaviorModel, Generic[TTask]):
     """Base class used to define the stage logic of a mouse university task."""
 
-    name: str = Field(..., description="Name of the stage.")
-    description: str = Field("", description="Description of the stage.")
     task: TTask = Field(..., description="Task that the stage belongs to.")
     stage_transitions: List[TransitionRule] = Field(
         default_factory=list, description="Stage transitions that the stage contains."
