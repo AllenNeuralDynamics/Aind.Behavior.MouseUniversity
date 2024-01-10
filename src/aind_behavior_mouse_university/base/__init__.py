@@ -58,8 +58,6 @@ class Task(AindBehaviorCoreModel):
 
     name: str
     description: str
-    describedBy: Literal["tbd_link.url"] = "tbd_link.url"
-    schema_version: Literal["0.1.0"] = "0.1.0"
 
 
 TTask = TypeVar("TTask", bound=Task)
@@ -69,25 +67,20 @@ class Metrics(AindBehaviorCoreModel, Generic[TTask]):
     """Base class used to define the metrics model for a specific tasks in the mouse university."""
 
     name: str
-    description: str
+    description: str = Field("", description="Description of the metrics.")
     describedBy: Literal["tbd_link.url"] = "tbd_link.url"
     schema_version: Literal["0.1.0"] = "0.1.0"
+    task: TTask = Field(..., description="Task that the metrics belong to.")
     metrics: Any = Field(None, description="Metrics that the task contains.")
 
 
 class TransitionRule(AindBehaviorModel):
-    """Base class used to define the transition rule logic of a mouse university task."""
-
-    name: str = Field(..., description="Name of the transition rule.")
-    callable: Rule = Field(..., description="Callable or reference to a callable that defines the transition rule.")
-
-
-class StageTransition(AindBehaviorModel):
     """Base class used to define the stage transition logic of a mouse university task."""
 
     target_stage: Stage = Field(..., description="Target stage of the transition.")
-    transition_rule: TransitionRule = Field(..., description="Transition rule that defines the transition.")
-    description: str = Field("", description="Optional description of the stage transition.")
+    callable: Rule = Field(..., description="Callable or reference to a callable that defines the transition rule.")
+    description: str = Field("", description="Optional description of the transition rule.")
+    # Todo Consider adding a validation step to the transition rule. e.g. Callable[[Metrics], bool]
 
 
 class Stage(AindBehaviorModel, Generic[TTask]):
@@ -96,7 +89,7 @@ class Stage(AindBehaviorModel, Generic[TTask]):
     name: str = Field(..., description="Name of the stage.")
     description: str = Field("", description="Description of the stage.")
     task: TTask = Field(..., description="Task that the stage belongs to.")
-    stage_transitions: List[StageTransition] = Field(
+    stage_transitions: List[TransitionRule] = Field(
         default_factory=list, description="Stage transitions that the stage contains."
     )
     metrics: Metrics[TTask] = Field(..., description="Metrics reference for the specific stage")
@@ -109,10 +102,10 @@ class Stage(AindBehaviorModel, Generic[TTask]):
     def metrics_as_reference(self, metrics: Metrics[TTask], _info):
         return Metrics.model_validate_json(metrics.model_dump_json())
 
-    def append_transition(self, transition: StageTransition) -> None:
+    def append_transition(self, transition: TransitionRule) -> None:
         self.stage_transitions.append(transition)
 
-    def pop_transition(self, index: int) -> StageTransition:
+    def pop_transition(self, index: int) -> TransitionRule:
         return self.stage_transitions.pop(index)
 
 
@@ -127,7 +120,6 @@ class Curriculum(AindBehaviorCoreModel):
 
 
 class Rule:
-    # todo considering using Callable[[Metrics], Stage] and validating here?
 
     @classmethod
     def __get_pydantic_core_schema__(
