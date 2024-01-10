@@ -68,10 +68,7 @@ class Metrics(AindBehaviorCoreModel, Generic[TTask]):
 
     name: str
     description: str = Field("", description="Description of the metrics.")
-    describedBy: Literal["tbd_link.url"] = "tbd_link.url"
-    schema_version: Literal["0.1.0"] = "0.1.0"
     task: TTask = Field(..., description="Task that the metrics belong to.")
-    metrics: Any = Field(None, description="Metrics that the task contains.")
 
 
 class TransitionRule(AindBehaviorModel):
@@ -80,7 +77,10 @@ class TransitionRule(AindBehaviorModel):
     target_stage: Stage = Field(..., description="Target stage of the transition.")
     callable: Rule = Field(..., description="Callable or reference to a callable that defines the transition rule.")
     description: str = Field("", description="Optional description of the transition rule.")
-    # Todo Consider adding a validation step to the transition rule. e.g. Callable[[Metrics], bool]
+
+    @field_serializer("target_stage")
+    def task_as_reference(self, target_stage: Stage, _info):
+        return target_stage.name
 
 
 class Stage(AindBehaviorModel, Generic[TTask]):
@@ -114,8 +114,6 @@ class Curriculum(AindBehaviorCoreModel):
 
     name: str
     description: str
-    describedBy: Literal["tbd_link.url"] = "tbd_link.url"
-    schema_version: Literal["0.1.0"] = "0.1.0"
     stages: list[Stage] = Field(..., description="Stages that the curriculum contains.")
 
 
