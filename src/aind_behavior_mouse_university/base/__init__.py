@@ -100,6 +100,12 @@ class Stage(AindBehaviorModel, Generic[TTask]):
     def metrics_as_reference(self, metrics: Metrics[TTask], _info):
         return Metrics.model_validate_json(metrics.model_dump_json())
 
+    def append_transition(self, transition: StageTransition) -> None:
+        self.stage_transitions.append(transition)
+
+    def pop_transition(self, index: int) -> StageTransition:
+        return self.stage_transitions.pop(index)
+
 
 class Curriculum(AindBehaviorCoreModel):
     """Base class used to define the curriculum in the mouse university."""
