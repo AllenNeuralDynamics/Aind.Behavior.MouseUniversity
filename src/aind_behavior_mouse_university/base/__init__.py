@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from importlib import import_module
-
 from typing import Any, Callable, Generic, List, Literal, TypeVar
 
 from aind_data_schema.base import AindCoreModel, AindModel
@@ -170,7 +169,10 @@ class Rule:
         else:
             split = value.rsplit(".", 1)
             if len(split) == 0:
-                raise ValueError("Invalid rule value while attempting to deserialize callable. Got {value}, expected string in the format 'module.function'}")
+                raise ValueError(
+                    "Invalid rule value while attempting to deserialize callable. \
+                        Got {value}, expected string in the format 'module.function'}"
+                )
             elif len(split) == 1:
                 return globals()[split]
             else:
@@ -182,4 +184,3 @@ class Rule:
         if isinstance(value, str):
             value = Rule._deserialize_callable(value)
         return value.__module__ + "." + value.__name__
-
