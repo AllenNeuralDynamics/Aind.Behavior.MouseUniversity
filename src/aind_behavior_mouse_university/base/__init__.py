@@ -59,8 +59,13 @@ class SemVerAnnotation:
 class Task(AindBehaviorCoreModel):
     """Base class used to define the task logic of a mouse university task."""
 
-    name: str
-    description: str
+    name: str = Field(..., description="Name of the task.")
+    description: str = Field("", description="Description of the task.")
+    version: SemVerAnnotation = Field(..., description="Version of the task.")
+
+    @classmethod
+    def as_reference(cls: Task) -> Task:
+        return Task.model_validate(cls.model_construct())
 
 
 TTask = TypeVar("TTask", bound=Task)

@@ -14,6 +14,7 @@ class TaskFoo(Task):
     description: Literal["Example task."] = "Example task."
     describedBy: Literal["foo.url"] = "foo.url"
     schema_version: Literal["0.1.0"] = "0.1.0"
+    version: Literal["0.1.0"] = "0.1.0"
     param1: str = Field("on", description="Parameter 1")
     param_float_gain: float = Field(1.0, description="gain")
 
@@ -25,9 +26,7 @@ class MetricsFoo(Metrics[TaskFoo]):
     description: Literal["Example metrics."] = "Example metrics."
     describedBy: Literal["foo_metrics.url"] = "foo_metrics.url"
     schema_version: Literal["0.1.0"] = "0.1.0"
-    task: TaskFoo = Field(
-        ..., description="Task that the metrics belong to."
-    )  # TODO we should be able to provide the reference to a task without having to instantiate it.
+    task: TaskFoo = Field(TaskFoo.as_reference(), description="Task that the metrics belong to.")
     output1: float = Field(1, description="Parameter 1")
     output2: float = Field(0, description="Parameter 2")
 
@@ -39,6 +38,7 @@ class TaskBar(Task):
     description: Literal["Example task."] = "Example task."
     describedBy: Literal["bar.url"] = "bar.url"
     schema_version: Literal["0.1.0"] = "0.1.0"
+    version: Literal["0.1.0"] = "0.1.0"
     param1: int = Field(1, description="Parameter 1")
     param2: str = Field("hard_mode_enabled", description="Parameter 2")
 
@@ -50,7 +50,7 @@ class MetricsBar(Metrics[TaskBar]):
     description: Literal["Example metrics."] = "Example metrics."
     describedBy: Literal["bar_metrics.url"] = "bar_metrics.url"
     schema_version: Literal["0.1.0"] = "0.1.0"
-    task: TaskBar = Field(..., description="Task that the metrics belong to.")
+    task: TaskBar = Field(TaskBar.as_reference(), description="Task that the metrics belong to.")
     bar_regression_slope: float = Field(-0.2, description="slopes of regression")
 
 
@@ -71,7 +71,7 @@ def rule3_foo(metrics: MetricsFoo) -> bool:
 
 # Define stages
 stage_1_specs = TaskBar(param2="A", param1=1)
-stage_1_metrics = MetricsBar(task=stage_1_specs, bar_regression_slope=1.0)  # TODO reference to task is sufficient
+stage_1_metrics = MetricsBar(bar_regression_slope=1.0)  # TODO reference to task is sufficient
 stage1 = Stage(name="stage1", task=stage_1_specs, metrics=stage_1_metrics, stage_transitions=[])
 
 
@@ -89,14 +89,13 @@ stage3 = Stage(name="stage3", task=stage_3_specs, metrics=stage_3_metrics, stage
 
 # Define transitions
 
-# Todo some syntactic sugar here might be nice...
 transitions_from_stage1 = [
     TransitionRule(target_stage=stage2, callable=rule1_bar, description="rule1"),
 ]
 _ = [stage1.append_transition(transition) for transition in transitions_from_stage1]
 
 transitions_from_stage2 = [
-    TransitionRule(target_stage=stage1.model_copy(deep=True), callable=rule1_bar, description="rule1"),
+    TransitionRule(target_stage=stage1.model_copy(deep=True), callable=rule1_bar, description="rule1"), 
     TransitionRule(target_stage=stage3.model_copy(deep=True), callable=rule2_bar, description="rule2"),
 ]
 _ = [stage2.append_transition(transition) for transition in transitions_from_stage2]
