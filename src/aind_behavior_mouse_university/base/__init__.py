@@ -18,9 +18,6 @@ class AindBehaviorModel(AindModel, extra="ignore"):
     pass
 
 
-T = TypeVar("T")
-
-
 class SemVerAnnotation:
     @classmethod
     def __get_pydantic_core_schema__(
