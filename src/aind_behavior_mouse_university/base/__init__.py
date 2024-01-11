@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from importlib import import_module
-from typing import Any, Callable, Generic, List, TypeVar, Optional, override
+from typing import Any, Callable, Generic, List, Optional, TypeVar
 
 from aind_data_schema.base import AindCoreModel, AindModel
-from pydantic import Field, GetJsonSchemaHandler, ValidationError, field_serializer
+from pydantic import Field, GetJsonSchemaHandler, field_serializer
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import core_schema
 from semver import Version
@@ -16,6 +16,9 @@ class AindBehaviorCoreModel(AindCoreModel, extra="ignore"):
 
 class AindBehaviorModel(AindModel, extra="ignore"):
     pass
+
+
+T = TypeVar("T")
 
 
 class SemVerAnnotation:
@@ -71,61 +74,44 @@ class Metrics(AindBehaviorCoreModel, Generic[TTask]):
     task: TTask = Field(..., description="Task that the metrics belong to.")
 
     @field_serializer("task")
-    def task_as_reference(self, task: TTask, _info):
-        return Task.model_validate_json(task.model_dump_json())
+    def _task_as_reference(self, task: TTask, _info):
+        return Task.model_validate(task.model_dump())
 
 
 class TransitionRule(AindBehaviorModel):
     """Base class used to define the stage transition logic of a mouse university task."""
 
-    target_stage: Stage = Field(..., description="Target stage of the transition.")
+    target_stage: StageReference | Stage = Field(..., description="Target stage of the transition.")
     callable: Rule = Field(..., description="Callable or reference to a callable that defines the transition rule.")
     description: str = Field("", description="Optional description of the transition rule.")
 
     @field_serializer("target_stage")
-    def stage_as_reference(self, target_stage: Stage, _info):
-        return StageReference.model_validate_json(target_stage.model_dump_json())
+    def _stage_as_reference(self, target_stage: Stage | StageReference, _info) -> StageReference:
+        if isinstance(target_stage, Stage):
+            return StageReference.model_validate(
+                target_stage.model_copy().model_dump()
+            )  # Not what the model_dump() is doing, but it seems necessary to copy the object before serializing it.
+        else:
+            return target_stage
 
 
-class StageReference(AindBehaviorModel, Generic[TTask]):
-    """Base class used to reference the stage logic of a mouse university task. You should not inherit from this class."""
+class Stage(AindBehaviorModel, Generic[TTask]):
+    """Base class used to define the stage logic of a mouse university task."""
 
     name: str = Field(..., description="Name of the stage.")
-    task: Optional[TTask] = Field(None, description="Task that the stage belongs to.")
-    stage_transitions: Optional[List[TransitionRule]] = Field(
-        None, description="Stage transitions that the stage contains."
+    task: TTask = Field(..., description="Task that the stage belongs to.")
+    stage_transitions: List[TransitionRule] = Field(
+        default_factory=list, description="Stage transitions that the stage contains."
     )
     metrics: Optional[Metrics[TTask]] = Field(None, description="Metrics reference for the specific stage")
     description: str = Field("", description="Description of the stage.")
 
     @field_serializer("task")
-    def task_as_reference(self, task: Optional[TTask], _info):
-        return None
-
-    @field_serializer("metrics")
-    def metrics_as_reference(self, metrics: Optional[Metrics[TTask]], _info):
-        return None
-
-    @field_serializer("stage_transitions")
-    def stage_transition_as_reference(self, stage_transitions: Optional[List[TransitionRule]], _info):
-        return None
-
-
-class Stage(StageReference):
-    """Base class used to define the stage logic of a mouse university task."""
-    task: TTask = Field(..., description="Task that the stage belongs to.")
-    stage_transitions: List[TransitionRule] = Field(
-        default_factory=list, description="Stage transitions that the stage contains."
-    )
-
-    @override
-    @field_serializer("task")
-    def task_as_reference(self, task: Optional[TTask], _info):
+    def _task_as_reference(self, task: Optional[TTask], _info):
         return Task.model_validate_json(task.model_dump_json())
 
-    @override
     @field_serializer("metrics")
-    def metrics_as_reference(self, metrics: Optional[Metrics[TTask]], _info):
+    def _metrics_as_reference(self, metrics: Optional[Metrics[TTask]], _info):
         return Metrics.model_validate_json(metrics.model_dump_json())
 
     def append_transition(self, transition: TransitionRule) -> None:
@@ -133,6 +119,17 @@ class Stage(StageReference):
 
     def pop_transition(self, index: int) -> TransitionRule:
         return self.stage_transitions.pop(index)
+
+
+class StageReference(Stage):
+    """Base class used to define the stage logic of a mouse university task."""
+
+    task: Optional[TTask] = Field(None, description="Task that the stage belongs to.")
+    stage_transitions: Optional[List[TransitionRule]] = Field(
+        None, description="Stage transitions that the stage contains.", exclude=True
+    )
+    metrics: Optional[Metrics[TTask]] = Field(None, description="Metrics reference for the specific stage")
+
 
 class Curriculum(AindBehaviorCoreModel):
     """Base class used to define the curriculum in the mouse university."""
@@ -143,7 +140,6 @@ class Curriculum(AindBehaviorCoreModel):
 
 
 class Rule:
-
     @classmethod
     def __get_pydantic_core_schema__(
         cls,

@@ -1,7 +1,8 @@
-from typing import Literal, Dict
+from typing import Literal
+
 from pydantic import Field
-from aind_behavior_mouse_university.base import Metrics, Stage, Task, Curriculum, TransitionRule
-from aind_behavior_mouse_university.base import AindBehaviorModel
+
+from aind_behavior_mouse_university.base import Curriculum, Metrics, Stage, Task, TransitionRule
 
 # Define tasks
 
@@ -24,7 +25,9 @@ class MetricsFoo(Metrics[TaskFoo]):
     description: Literal["Example metrics."] = "Example metrics."
     describedBy: Literal["foo_metrics.url"] = "foo_metrics.url"
     schema_version: Literal["0.1.0"] = "0.1.0"
-    task: TaskFoo = Field(..., description="Task that the metrics belong to.") # TODO we should be able to provide the reference to a task without having to instantiate it.
+    task: TaskFoo = Field(
+        ..., description="Task that the metrics belong to."
+    )  # TODO we should be able to provide the reference to a task without having to instantiate it.
     output1: float = Field(1, description="Parameter 1")
     output2: float = Field(0, description="Parameter 2")
 
@@ -69,34 +72,19 @@ def rule3_foo(metrics: MetricsFoo) -> bool:
 # Define stages
 stage_1_specs = TaskBar(param2="A", param1=1)
 stage_1_metrics = MetricsBar(task=stage_1_specs, bar_regression_slope=1.0)  # TODO reference to task is sufficient
-stage1 = (
-    Stage(
-        name="stage1",
-        task=stage_1_specs,
-        metrics=stage_1_metrics,
-        stage_transitions=[]))
+stage1 = Stage(name="stage1", task=stage_1_specs, metrics=stage_1_metrics, stage_transitions=[])
 
 
 stage_2_specs = TaskBar(param1=1, param2="B")
 stage_2_metrics = MetricsBar(task=stage_2_specs)
 
-stage2 = (
-    Stage(
-        name="stage2",
-        task=stage_2_specs,
-        metrics=stage_2_metrics,
-        stage_transitions=[]))
+stage2 = Stage(name="stage2", task=stage_2_specs, metrics=stage_2_metrics, stage_transitions=[])
 
 #
 stage_3_specs = TaskFoo(param1="A", param_float_gain=2.0)
 stage_3_metrics = MetricsFoo(task=stage_3_specs, output2=10)
 
-stage3 = (
-    Stage(
-        name="stage3",
-        task=stage_3_specs,
-        metrics=stage_3_metrics,
-        stage_transitions=[]))
+stage3 = Stage(name="stage3", task=stage_3_specs, metrics=stage_3_metrics, stage_transitions=[])
 
 
 # Define transitions
@@ -108,14 +96,14 @@ transitions_from_stage1 = [
 _ = [stage1.append_transition(transition) for transition in transitions_from_stage1]
 
 transitions_from_stage2 = [
-    TransitionRule(target_stage=stage1, callable=rule1_bar, description="rule1"),
-    TransitionRule(target_stage=stage3, callable=rule2_bar, description="rule2"),
+    TransitionRule(target_stage=stage1.model_copy(deep=True), callable=rule1_bar, description="rule1"),
+    TransitionRule(target_stage=stage3.model_copy(deep=True), callable=rule2_bar, description="rule2"),
 ]
 _ = [stage2.append_transition(transition) for transition in transitions_from_stage2]
 
 transitions_from_stage3 = [
-     TransitionRule(target_stage=stage1, callable=rule3_foo, description="rule3"),
-     TransitionRule(target_stage=stage2, callable=rule3_foo, description="rule3"),
+    TransitionRule(target_stage=stage1, callable=rule3_foo, description="rule3"),
+    TransitionRule(target_stage=stage2, callable=rule3_foo, description="rule3"),
 ]
 _ = [stage3.append_transition(transition) for transition in transitions_from_stage3]
 
@@ -126,11 +114,15 @@ major_in_dynamic_foraging = Curriculum(
     schema_version="0.1.0",
     name="major_in_dynamic_foraging",
     description="Example curriculum.",
-    stages=[stage1, stage2, stage3])
+    stages=[stage1, stage2, stage3],
+)
 
 with open("a.json", "w") as f:
     f.write(major_in_dynamic_foraging.model_dump_json(indent=3))
 
-# deserialized = Curriculum.model_validate_json(major_in_dynamic_foraging.model_dump_json())
-# stage1_deser = deserialized[0]
-# print(stage1_deser)
+deserialized = Curriculum.model_validate_json(major_in_dynamic_foraging.model_dump_json())
+print(deserialized)
+
+print("Should I transition from stage 1 to stage 2?")
+print(deserialized.stages[0].stage_transitions[0].callable(MetricsBar(task=stage_1_specs, bar_regression_slope=7)))
+# prints "True"
