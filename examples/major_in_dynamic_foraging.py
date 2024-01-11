@@ -116,7 +116,7 @@ major_in_dynamic_foraging = Curriculum(
     stages={stage.name: stage for stage in [stage1, stage2, stage3]},
 )
 
-with open("file.json", "w") as f:
+with open("examples/file.json", "w") as f:
     f.write(major_in_dynamic_foraging.model_dump_json(indent=3))
 
 deserialized = Curriculum.model_validate_json(major_in_dynamic_foraging.model_dump_json())
