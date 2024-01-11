@@ -4,7 +4,7 @@ from importlib import import_module
 from typing import Any, Callable, Generic, List, TypeVar, Optional
 
 from aind_data_schema.base import AindCoreModel, AindModel
-from pydantic import Field, GetJsonSchemaHandler, ValidationError
+from pydantic import Field, GetJsonSchemaHandler, ValidationError, field_serializer
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import core_schema
 from semver import Version
@@ -69,18 +69,10 @@ class Metrics(AindBehaviorCoreModel, Generic[TTask]):
     name: str
     description: str = Field("", description="Description of the metrics.")
     task: TTask = Field(..., description="Task that the metrics belong to.")
-    is_reference: bool = Field(..., description="Whether the definition is a reference to another stage.")
-
-    def model_post_init(self, __context: Any) -> None:
-        if not self.is_reference and self.task == None:
-            raise ValidationError("If not a reference, task cannot be None")
 
     @field_serializer("task")
-    def task_as_reference(self, task: Optional[TTask], _info):
-        if self.is_reference:
-            return None
-        else:
-            return Task.model_validate_json(task.model_dump_json())
+    def task_as_reference(self, task: TTask, _info):
+        return Task.model_validate_json(task.model_dump_json())
 
 
 class TransitionRule(AindBehaviorModel):
@@ -90,53 +82,56 @@ class TransitionRule(AindBehaviorModel):
     callable: Rule = Field(..., description="Callable or reference to a callable that defines the transition rule.")
     description: str = Field("", description="Optional description of the transition rule.")
 
-# todo post init reference checking
+    @field_serializer("target_stage")
+    def metrics_as_reference(self, target_stage: Stage, _info):
+        return StageReference.model_validate_json(target_stage.model_dump_json())
 
 
-class Stage(AindBehaviorModel, Generic[TTask]):
-    """Base class used to define the stage logic of a mouse university task."""
+class StageReference(AindBehaviorModel, Generic[TTask]):
+    """Base class used to reference the stage logic of a mouse university task. You should not inherit from this class."""
 
     name: str = Field(..., description="Name of the stage.")
-    task: Optional[TTask] = Field(..., description="Task that the stage belongs to.")
+    task: Optional[TTask] = Field(None, description="Task that the stage belongs to.")
     stage_transitions: Optional[List[TransitionRule]] = Field(
         None, description="Stage transitions that the stage contains."
     )
     metrics: Optional[Metrics[TTask]] = Field(None, description="Metrics reference for the specific stage")
     description: str = Field("", description="Description of the stage.")
-    is_reference: bool = Field(..., description="Whether the definition is a reference to another stage.")
-
-    def model_post_init(self, __context: Any) -> None:
-        any_null = (self.task == None) or (self.stage_transitions == None) or (self.metrics == None)
-        if not self.is_reference and any_null:
-            raise ValidationError("If not a reference, task, stage_transitions and metrics cannot be None")
-        if self.is_reference:
-            self.task = None
-            self.stage_transitions = None
-            self.metrics = None
-
-    def as_reference(self: Stage) -> Stage:
-        return self.model_copy(update={"is_reference": True})
 
     @field_serializer("task")
     def task_as_reference(self, task: Optional[TTask], _info):
-        if self.is_reference:
-            return None
-        else:
-            return Task.model_validate_json(task.model_dump_json())
+        return None
 
     @field_serializer("metrics")
     def metrics_as_reference(self, metrics: Optional[Metrics[TTask]], _info):
-        if self.is_reference:
-            return None
-        else:
-            return Metrics.model_validate_json(metrics.model_dump_json())
+        return None
 
+    @field_serializer("stage_transitions")
+    def metrics_as_reference(self, stage_transitions: Optional[List[TransitionRule]], _info):
+        return None
 
     def append_transition(self, transition: TransitionRule) -> None:
         self.stage_transitions.append(transition)
 
     def pop_transition(self, index: int) -> TransitionRule:
         return self.stage_transitions.pop(index)
+
+
+class Stage(StageReference):
+    """Base class used to define the stage logic of a mouse university task."""
+    task: TTask = Field(..., description="Task that the stage belongs to.")
+    stage_transitions: List[TransitionRule] = Field(
+        ..., description="Stage transitions that the stage contains."
+    )
+
+    @field_serializer("task")
+    def task_as_reference(self, task: Optional[TTask], _info):
+        return Task.model_validate_json(task.model_dump_json())
+
+    @field_serializer("metrics")
+    def metrics_as_reference(self, metrics: Optional[Metrics[TTask]], _info):
+        return Metrics.model_validate_json(metrics.model_dump_json())
+
 
 
 class Curriculum(AindBehaviorCoreModel):
