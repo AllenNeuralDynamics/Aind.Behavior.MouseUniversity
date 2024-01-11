@@ -1,10 +1,10 @@
 from typing import Literal, Dict
 from pydantic import Field
-from aind_behavior_mouse_university.base import Rule, SemVerAnnotation, Metrics, Stage, Task, Curriculum, TransitionRule
+from aind_behavior_mouse_university.base import Metrics, Stage, Task, Curriculum, TransitionRule
 from aind_behavior_mouse_university.base import AindBehaviorModel
 
-
 # Define tasks
+
 
 class TaskFoo(Task):
     """Example Foo task."""
@@ -114,11 +114,10 @@ transitions_from_stage2 = [
 _ = [stage2.append_transition(transition) for transition in transitions_from_stage2]
 
 transitions_from_stage3 = [
-    TransitionRule(target_stage=stage1, callable=rule3_foo, description="rule3"),
-    TransitionRule(target_stage=stage2, callable=rule3_foo, description="rule3"),
+     TransitionRule(target_stage=stage1, callable=rule3_foo, description="rule3"),
+     TransitionRule(target_stage=stage2, callable=rule3_foo, description="rule3"),
 ]
 _ = [stage3.append_transition(transition) for transition in transitions_from_stage3]
-
 
 # Define curriculum
 
@@ -129,11 +128,9 @@ major_in_dynamic_foraging = Curriculum(
     description="Example curriculum.",
     stages=[stage1, stage2, stage3])
 
-print(major_in_dynamic_foraging.model_dump_json())
+with open("a.json", "w") as f:
+    f.write(major_in_dynamic_foraging.model_dump_json(indent=3))
 
-with open("major_in_dynamic_foraging.json", "w") as f:
-    f.write(major_in_dynamic_foraging.model_dump_json())
-
-deserialized = Curriculum.model_validate_json(major_in_dynamic_foraging.model_dump_json())
-stage1_deser = deserialized[0]
-print(stage1_deser)
+# deserialized = Curriculum.model_validate_json(major_in_dynamic_foraging.model_dump_json())
+# stage1_deser = deserialized[0]
+# print(stage1_deser)

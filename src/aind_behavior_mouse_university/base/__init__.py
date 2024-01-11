@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from importlib import import_module
-from typing import Any, Callable, Generic, List, TypeVar, Optional
+from typing import Any, Callable, Generic, List, TypeVar, Optional, override
 
 from aind_data_schema.base import AindCoreModel, AindModel
 from pydantic import Field, GetJsonSchemaHandler, ValidationError, field_serializer
@@ -83,7 +83,7 @@ class TransitionRule(AindBehaviorModel):
     description: str = Field("", description="Optional description of the transition rule.")
 
     @field_serializer("target_stage")
-    def metrics_as_reference(self, target_stage: Stage, _info):
+    def stage_as_reference(self, target_stage: Stage, _info):
         return StageReference.model_validate_json(target_stage.model_dump_json())
 
 
@@ -107,32 +107,32 @@ class StageReference(AindBehaviorModel, Generic[TTask]):
         return None
 
     @field_serializer("stage_transitions")
-    def metrics_as_reference(self, stage_transitions: Optional[List[TransitionRule]], _info):
+    def stage_transition_as_reference(self, stage_transitions: Optional[List[TransitionRule]], _info):
         return None
-
-    def append_transition(self, transition: TransitionRule) -> None:
-        self.stage_transitions.append(transition)
-
-    def pop_transition(self, index: int) -> TransitionRule:
-        return self.stage_transitions.pop(index)
 
 
 class Stage(StageReference):
     """Base class used to define the stage logic of a mouse university task."""
     task: TTask = Field(..., description="Task that the stage belongs to.")
     stage_transitions: List[TransitionRule] = Field(
-        ..., description="Stage transitions that the stage contains."
+        default_factory=list, description="Stage transitions that the stage contains."
     )
 
+    @override
     @field_serializer("task")
     def task_as_reference(self, task: Optional[TTask], _info):
         return Task.model_validate_json(task.model_dump_json())
 
+    @override
     @field_serializer("metrics")
     def metrics_as_reference(self, metrics: Optional[Metrics[TTask]], _info):
         return Metrics.model_validate_json(metrics.model_dump_json())
 
+    def append_transition(self, transition: TransitionRule) -> None:
+        self.stage_transitions.append(transition)
 
+    def pop_transition(self, index: int) -> TransitionRule:
+        return self.stage_transitions.pop(index)
 
 class Curriculum(AindBehaviorCoreModel):
     """Base class used to define the curriculum in the mouse university."""
