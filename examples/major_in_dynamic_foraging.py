@@ -113,7 +113,7 @@ major_in_dynamic_foraging = Curriculum(
     schema_version="0.1.0",
     name="major_in_dynamic_foraging",
     description="Example curriculum.",
-    stages=[stage1, stage2, stage3],
+    stages={stage.name: stage for stage in [stage1, stage2, stage3]},
 )
 
 with open("file.json", "w") as f:
@@ -123,5 +123,9 @@ deserialized = Curriculum.model_validate_json(major_in_dynamic_foraging.model_du
 print(deserialized)
 
 print("Should I transition from stage 1 to stage 2?")
-print(deserialized.stages[0].stage_transitions[0].callable(MetricsBar(task=stage_1_specs, bar_regression_slope=7)))
+print(
+    deserialized.stages[stage1.name]
+    .stage_transitions[0]
+    .callable(MetricsBar(task=stage_1_specs, bar_regression_slope=7))
+)
 # prints "True"

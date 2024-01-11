@@ -3,8 +3,8 @@
    "schema_version": "0.1.0",
    "name": "major_in_dynamic_foraging",
    "description": "Example curriculum.",
-   "stages": [
-      {
+   "stages": {
+      "stage1": {
          "name": "stage1",
          "task": {
             "describedBy": "bar.url",
@@ -38,7 +38,7 @@
          },
          "description": ""
       },
-      {
+      "stage2": {
          "name": "stage2",
          "task": {
             "describedBy": "bar.url",
@@ -80,7 +80,7 @@
          },
          "description": ""
       },
-      {
+      "stage3": {
          "name": "stage3",
          "task": {
             "describedBy": "foo.url",
@@ -122,5 +122,5 @@
          },
          "description": ""
       }
-   ]
+   }
 }

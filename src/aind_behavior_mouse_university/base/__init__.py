@@ -146,7 +146,12 @@ class Curriculum(AindBehaviorCoreModel):
 
     name: str
     description: str
-    stages: list[Stage] = Field(..., description="Stages that the curriculum contains.")
+    stages: list[Stage] | dict[str, Stage] = Field(..., description="Stages that the curriculum contains.")
+
+    def __init__(self, **data):
+        if isinstance(data["stages"], list):
+            data["stages"] = {stage.name: stage for stage in data["stages"]}
+        super().__init__(**data)
 
 
 class Rule:
