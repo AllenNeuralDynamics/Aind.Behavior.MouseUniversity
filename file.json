@@ -1,0 +1,126 @@
+{
+   "describedBy": "ASD",
+   "schema_version": "0.1.0",
+   "name": "major_in_dynamic_foraging",
+   "description": "Example curriculum.",
+   "stages": [
+      {
+         "name": "stage1",
+         "task": {
+            "describedBy": "bar.url",
+            "schema_version": "0.1.0",
+            "name": "bar",
+            "description": "Example task.",
+            "version": "0.1.0"
+         },
+         "stage_transitions": [
+            {
+               "target_stage": {
+                  "name": "stage2",
+                  "description": ""
+               },
+               "callable": "__main__.rule1_bar",
+               "description": "rule1"
+            }
+         ],
+         "metrics": {
+            "describedBy": "bar_metrics.url",
+            "schema_version": "0.1.0",
+            "name": "bar_metrics",
+            "description": "Example metrics.",
+            "task": {
+               "describedBy": "bar.url",
+               "schema_version": "0.1.0",
+               "name": "bar",
+               "description": "Example task.",
+               "version": "0.1.0"
+            }
+         },
+         "description": ""
+      },
+      {
+         "name": "stage2",
+         "task": {
+            "describedBy": "bar.url",
+            "schema_version": "0.1.0",
+            "name": "bar",
+            "description": "Example task.",
+            "version": "0.1.0"
+         },
+         "stage_transitions": [
+            {
+               "target_stage": {
+                  "name": "stage1",
+                  "description": ""
+               },
+               "callable": "__main__.rule1_bar",
+               "description": "rule1"
+            },
+            {
+               "target_stage": {
+                  "name": "stage3",
+                  "description": ""
+               },
+               "callable": "__main__.rule2_bar",
+               "description": "rule2"
+            }
+         ],
+         "metrics": {
+            "describedBy": "bar_metrics.url",
+            "schema_version": "0.1.0",
+            "name": "bar_metrics",
+            "description": "Example metrics.",
+            "task": {
+               "describedBy": "bar.url",
+               "schema_version": "0.1.0",
+               "name": "bar",
+               "description": "Example task.",
+               "version": "0.1.0"
+            }
+         },
+         "description": ""
+      },
+      {
+         "name": "stage3",
+         "task": {
+            "describedBy": "foo.url",
+            "schema_version": "0.1.0",
+            "name": "foo",
+            "description": "Example task.",
+            "version": "0.1.0"
+         },
+         "stage_transitions": [
+            {
+               "target_stage": {
+                  "name": "stage1",
+                  "description": ""
+               },
+               "callable": "__main__.rule3_foo",
+               "description": "rule3"
+            },
+            {
+               "target_stage": {
+                  "name": "stage2",
+                  "description": ""
+               },
+               "callable": "__main__.rule3_foo",
+               "description": "rule3"
+            }
+         ],
+         "metrics": {
+            "describedBy": "foo_metrics.url",
+            "schema_version": "0.1.0",
+            "name": "foo_metrics",
+            "description": "Example metrics.",
+            "task": {
+               "describedBy": "foo.url",
+               "schema_version": "0.1.0",
+               "name": "foo",
+               "description": "Example task.",
+               "version": "0.1.0"
+            }
+         },
+         "description": ""
+      }
+   ]
+}

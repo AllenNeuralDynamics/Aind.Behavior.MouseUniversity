@@ -95,8 +95,8 @@ transitions_from_stage1 = [
 _ = [stage1.append_transition(transition) for transition in transitions_from_stage1]
 
 transitions_from_stage2 = [
-    TransitionRule(target_stage=stage1.model_copy(deep=True), callable=rule1_bar, description="rule1"), 
-    TransitionRule(target_stage=stage3.model_copy(deep=True), callable=rule2_bar, description="rule2"),
+    TransitionRule(target_stage=stage1, callable=rule1_bar, description="rule1"),
+    TransitionRule(target_stage=stage3, callable=rule2_bar, description="rule2"),
 ]
 _ = [stage2.append_transition(transition) for transition in transitions_from_stage2]
 
@@ -116,7 +116,7 @@ major_in_dynamic_foraging = Curriculum(
     stages=[stage1, stage2, stage3],
 )
 
-with open("a.json", "w") as f:
+with open("file.json", "w") as f:
     f.write(major_in_dynamic_foraging.model_dump_json(indent=3))
 
 deserialized = Curriculum.model_validate_json(major_in_dynamic_foraging.model_dump_json())

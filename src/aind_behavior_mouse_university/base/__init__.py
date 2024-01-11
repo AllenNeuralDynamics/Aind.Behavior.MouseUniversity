@@ -86,16 +86,19 @@ class Metrics(AindBehaviorCoreModel, Generic[TTask]):
 class TransitionRule(AindBehaviorModel):
     """Base class used to define the stage transition logic of a mouse university task."""
 
-    target_stage: StageReference | Stage = Field(..., description="Target stage of the transition.")
+    target_stage: StageReference | Stage = Field(..., description="Target stage of the transition.", frozen=True)
     callable: Rule = Field(..., description="Callable or reference to a callable that defines the transition rule.")
     description: str = Field("", description="Optional description of the transition rule.")
+
+    def __init__(self, **data):
+        if isinstance(data["target_stage"], Stage):
+            data["target_stage"] = StageReference.model_validate(data["target_stage"].model_dump())
+        super().__init__(**data)
 
     @field_serializer("target_stage")
     def _stage_as_reference(self, target_stage: Stage | StageReference, _info) -> StageReference:
         if isinstance(target_stage, Stage):
-            return StageReference.model_validate(
-                target_stage.model_copy().model_dump()
-            )  # Not what the model_dump() is doing, but it seems necessary to copy the object before serializing it.
+            return StageReference.model_validate(target_stage.model_dump())
         else:
             return target_stage
 
@@ -129,11 +132,13 @@ class Stage(AindBehaviorModel, Generic[TTask]):
 class StageReference(Stage):
     """Base class used to define the stage logic of a mouse university task."""
 
-    task: Optional[TTask] = Field(None, description="Task that the stage belongs to.")
+    task: Optional[TTask] = Field(None, description="Task that the stage belongs to.", exclude=True)
     stage_transitions: Optional[List[TransitionRule]] = Field(
         None, description="Stage transitions that the stage contains.", exclude=True
     )
-    metrics: Optional[Metrics[TTask]] = Field(None, description="Metrics reference for the specific stage")
+    metrics: Optional[Metrics[TTask]] = Field(
+        None, description="Metrics reference for the specific stage", exclude=True
+    )
 
 
 class Curriculum(AindBehaviorCoreModel):
