@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from importlib import import_module
 from typing import Any, Callable, Generic, List, Optional, TypeVar
+from enum import Enum
+from functools import partial
 
 from aind_data_schema.base import AindCoreModel, AindModel
 from pydantic import Field, GetJsonSchemaHandler, field_serializer
@@ -16,6 +18,20 @@ class AindBehaviorCoreModel(AindCoreModel, extra="ignore"):
 
 class AindBehaviorModel(AindModel, extra="ignore"):
     pass
+
+
+class AllowModification(Enum):
+    TRUE = True
+    FALSE = False
+
+    def __str__(self):
+        return str(self.value)
+
+    def __repr__(self):
+        return str(self.value)
+
+
+ModifiableAttr = partial(Field, allow_modification=AllowModification.TRUE)
 
 
 class SemVerAnnotation:
