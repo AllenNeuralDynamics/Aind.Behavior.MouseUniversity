@@ -26,7 +26,6 @@ class MetricsFoo(Metrics[TaskFoo]):
     description: Literal["Example metrics."] = "Example metrics."
     describedBy: Literal["foo_metrics.url"] = "foo_metrics.url"
     schema_version: Literal["0.1.0"] = "0.1.0"
-    task: TaskFoo = Field(TaskFoo.as_reference(), description="Task that the metrics belong to.")
     output1: float = Field(1, description="Parameter 1")
     output2: float = Field(0, description="Parameter 2")
 
@@ -50,7 +49,6 @@ class MetricsBar(Metrics[TaskBar]):
     description: Literal["Example metrics."] = "Example metrics."
     describedBy: Literal["bar_metrics.url"] = "bar_metrics.url"
     schema_version: Literal["0.1.0"] = "0.1.0"
-    task: TaskBar = Field(TaskBar.as_reference(), description="Task that the metrics belong to.")
     bar_regression_slope: float = Field(-0.2, description="slopes of regression")
 
 

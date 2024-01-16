@@ -73,7 +73,6 @@ class Metrics(AindBehaviorCoreModel, Generic[TTask]):
 
     name: str
     description: str = Field("", description="Description of the metrics.")
-    task: TTask = Field(..., description="Task that the metrics belong to.")
 
     @field_serializer("task")
     def _task_as_reference(self, task: TTask, _info):
