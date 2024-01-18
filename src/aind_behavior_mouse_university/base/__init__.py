@@ -90,10 +90,6 @@ class Metrics(AindBehaviorCoreModel, Generic[TTask]):
     name: str
     description: str = Field("", description="Description of the metrics.")
 
-    @field_serializer("task")
-    def _task_as_reference(self, task: TTask, _info):
-        return Task.model_validate(task.model_dump())
-
 
 class TransitionRule(AindBehaviorModel):
     """Base class used to define the stage transition logic of a mouse university task."""
